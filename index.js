@@ -1,14 +1,15 @@
 const express=require('express')
-const router=require('./router/route')
+const router=require('./src/router/route')
 const app=express()
 app.use(express.json());
+require("dotenv").config();
 // const multer=require('multer')
 // app.use(multer().any())
 
 
 const mongoose = require("mongoose");
        
-    mongoose.connect("mongodb+srv://ABHI:1rgLK1SKF60O1lEF@cluster0.skx8q.mongodb.net/strix",{
+    mongoose.connect(process.env.mongodb,{
         useNewUrlParser: true,
     })
     .then(()=>{
@@ -18,7 +19,7 @@ const mongoose = require("mongoose");
     })
 
 app.use('/',router)
-const port=process.env.PORT||8080;
+const port=process.env.PORT;
 app.listen(port,()=>{
     console.log(`server running at port ${port}`)
 })

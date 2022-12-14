@@ -10,6 +10,14 @@ const userdata=new mongoose.Schema({
     require:true,
     trim:true
   },
+  businessName:{
+    type:String,
+
+  },
+  gstNumber:{
+    type:Number
+  },
+
   mobile:{
     type:Number,
     require:true,
@@ -36,7 +44,8 @@ require:true
   roll:{
     type:String,
     require:true,
-    enum: ["user","vendar"]
+    enum: ["user","vendar","admin"],
+    default:null
   },
 
   password:{

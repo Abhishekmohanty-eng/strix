@@ -12,7 +12,7 @@ const{createUser,userLogin,getUserDetails,updateUserDetails} =require('../contro
 
 router.post('/register',createUser)
 router.post('/login',userLogin)
-router.get("/user/:userId",getUserDetails)
+router.get("/user",getUserDetails)
 router.put("/user/:userId",updateUserDetails)
 // app.get("/user/:userId",userAuthentication,getUserDetails)
 

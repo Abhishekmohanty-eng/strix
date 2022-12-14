@@ -3,6 +3,8 @@ const c_models= require('../model/CustomerModel')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const validator= require('../validator/validator')
+const sendMail = require("../middleware/nodemailer");
+
 const createUser = async function (req, res) {
 
   try {
@@ -43,7 +45,11 @@ const createUser = async function (req, res) {
       if (checkEmailFromDb) {
           return res.status(400).send({ status: false, message: `emailId is Exists. Please try another email Id.` })
       }
+      const checkGstFromDb = await c_models.findOne({ gstNumber: userDetails.gstNumber })
 
+      if (checkGstFromDb) {
+        return res.status(400).send({ status: false, message: `gst is Exists. Please try another email Id.` })
+    }
       if (!validator.isValid(userDetails.city)) {
           return res.status(400).send({ status: false, message: "city is required" })
       }
@@ -78,8 +84,15 @@ const createUser = async function (req, res) {
     userDetails.confirmPassword = c_hashedPassword
       
 
-      const saveUserInDb = await c_models.create(userDetails);
-
+    const saveUserInDb = await c_models.create(userDetails);
+   const sendemailto=await sendMail(saveUserInDb.emailId);
+   if(sendemailto){
+    res.status(201).send({ success: true, message:"sent massage"})
+   }else{
+    res.status(400).send({ success:false ,message:"not sent message"})
+    
+   }
+    
       return res.status(201).send({ status: true, message: "user created successfully!!", data: saveUserInDb });
 
   } catch (err) {
@@ -89,9 +102,6 @@ const createUser = async function (req, res) {
   }
 
 }
-
-
-
 
 /**********************************************************User LogIn************************************************/
 
@@ -147,39 +157,33 @@ const userLogin = async function (req, res) {
 
 // /****************************************************************Get User Data********************************************/
 
-const getUserDetails = async function (req, res) {
 
-  try {
+//   
+const getUserDetails = async function (req, res){
 
-      const userId = req.params.userId
-      const userIdFromToken = req.userId
+    try {
 
-        
-      // res.status(200).send({message:"done"})
-      // return null
-      if (!validator.isValidObjectId(userId)) {
-          return res.status(400).send({ status: false, message: "Invalid userId" })
-      }
-
-      const findUserDetails = await c_models.findById(userId)
-
-      if (!findUserDetails) {
-          return res.status(404).send({ status: false, message: "User Not Found!!" })
-      }
-
-      // if (findUserDetails._id.toString() != userIdFromToken) {
-      //     return res.status(403).send({ status: false, message: "You Are Not Authorized!!" });
-      // }
-
-      return res.status(200).send({ status: true, message: "Profile Fetched Successfully!!", data: findUserDetails })
-
-  } catch (err) {
-
-      return res.status(500).send({ status: false, error: err.message })
-
-  }
+        let data = req.query;
+        const userIdFromToken = req.userId
+        let filter = { $and: [{ isDeleted: false,  ...data }] };
+        // console.log(filter);
+        if (!(data)) res.status(400).send({ status: false, msg: "please enter your query" })
+        let dataPresent = await c_models.find(filter)
+        if (dataPresent.length === 0) {
+            res.status(404).send({ status: false,msg: " your query does not match with any data" })
+        }
+           
+    
+        // } if (findUserDetails._id.toString() != userIdFromToken) {
+        //     return res.status(403).send({ status: false, message: "You Are Not Authorized!!" });
+        // } 
+        else {
+            res.status(200).send({ status: true, data: dataPresent })
+        }
+    } catch (err) {
+        res.status(500).send({ status: false, msg: err.message });
+    }
 }
-
 
 // /************************************************************Update User Details*********************************************/
 
@@ -237,18 +241,6 @@ const updateUserDetails = async function (req, res) {
           return res.status(400).send({ status: false, message: 'phone number is Required' })
       }
 
-      // if (mobile) {
-      //     if (!(/^(\+\d{1,3}[- ]?)?\d{10}$/).test(userDetails.mobile))
-      //         return res.status(400).send({ status: false, message: "Phone number must be a valid Indian number." })
-
-      //     const checkPhoneFromDb = await c_models.findOne({ phone: userDetails.mobile })
-
-      //     if (checkPhoneFromDb) {
-      //         return res.status(400).send({ status: false, message: `${userDetails.mobile} is already in use, Please try a new phone number.` })
-      //     }
-      // }
-
-
       
 
       let updatedData={
@@ -277,5 +269,3 @@ const updateUserDetails = async function (req, res) {
 }
 
 module.exports={createUser,userLogin,getUserDetails,updateUserDetails}
-
-// module.exports = { createUser, userLogin, getUserDetails, updateUserDetails }
